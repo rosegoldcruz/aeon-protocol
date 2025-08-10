@@ -1,0 +1,60 @@
+# Node
+node_modules/
+.npm/
+.pnpm-store/
+.next/
+.next-cache/
+out/
+coverage/
+*.log
+
+# Yarn/PNPM
+.yarn/
+.pnp*
+
+# Env
+.env
+.env.*
+.env.local
+.env.development*
+.env.production*
+.env.test*
+.env.example*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Build/Dist
+build/
+dist/
+*.egg-info/
+
+# Docker
+.docker/
+
+# Local services
+.localstack/
+
+# Misc
+*.sqlite3
+/.augment/rules*
+/exec summary*
+/the protocol*
