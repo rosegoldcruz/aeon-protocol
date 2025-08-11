@@ -1,10 +1,9 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowRight, Bot, Briefcase, Image, Sparkles } from "lucide-react"
-import Link from "next/link"
 
-// Force dynamic rendering to avoid static generation issues
-export const dynamic = 'force-dynamic'
+// Force static generation to avoid API dependency issues
+export const dynamic = 'force-static'
 
 export default function HomePage() {
   return (
@@ -18,16 +17,12 @@ export default function HomePage() {
               <span className="text-2xl font-bold text-white">AEON</span>
             </div>
             <div className="flex items-center space-x-4">
-              <Link href="/sign-in">
-                <Button variant="ghost" className="text-white hover:text-blue-400">
-                  Sign In
-                </Button>
-              </Link>
-              <Link href="/sign-up">
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                  Get Started
-                </Button>
-              </Link>
+              <Button variant="ghost" className="text-white hover:text-blue-400" onClick={() => window.location.href = '/sign-in'}>
+                Sign In
+              </Button>
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => window.location.href = '/sign-up'}>
+                Get Started
+              </Button>
             </div>
           </div>
         </div>
@@ -46,12 +41,14 @@ export default function HomePage() {
             Generate media, automate workflows, and scale your business with intelligent AI agents.
           </p>
           <div className="flex justify-center space-x-4">
-            <Link href="/sign-up">
-              <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 text-lg">
-                Start Free Trial
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
+            <Button
+              size="lg"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 text-lg"
+              onClick={() => window.location.href = '/sign-up'}
+            >
+              Start Free Trial
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
           </div>
         </div>
       </section>

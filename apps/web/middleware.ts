@@ -14,9 +14,16 @@ const isPublicApiRoute = createRouteMatcher([
   '/api/init-db'
 ])
 
+const isPublicRoute = createRouteMatcher([
+  '/',
+  '/sign-in(.*)',
+  '/sign-up(.*)',
+  '/api/init-db'
+])
+
 export default clerkMiddleware((auth, req) => {
-  // Skip auth for public API routes
-  if (isPublicApiRoute(req)) return
+  // Skip auth for public routes and API routes
+  if (isPublicApiRoute(req) || isPublicRoute(req)) return
 
   if (isProtectedRoute(req)) auth().protect()
 })
