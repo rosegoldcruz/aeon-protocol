@@ -11,8 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from datetime import datetime, timezone
 
-from .database import get_db
-from .models import User, Tenant, Membership, UserRole
+from .database import get_db, User, Tenant, Membership, UserRole
 
 # Clerk configuration
 CLERK_PUBLISHABLE_KEY = os.getenv("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY")
@@ -199,7 +198,7 @@ async def get_current_user(
         role=membership.role
     )
 
-async def require_role(required_role: UserRole):
+def require_role(required_role: UserRole):
     """Dependency to require specific role"""
     def role_checker(current_user: AuthenticatedUser = Depends(get_current_user)):
         role_hierarchy = {
@@ -208,14 +207,14 @@ async def require_role(required_role: UserRole):
             UserRole.EDITOR: 3,
             UserRole.ADMIN: 4
         }
-        
+
         if role_hierarchy.get(current_user.role, 0) < role_hierarchy.get(required_role, 0):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Insufficient permissions. Required: {required_role.value}"
             )
         return current_user
-    
+
     return role_checker
 
 # Convenience dependencies

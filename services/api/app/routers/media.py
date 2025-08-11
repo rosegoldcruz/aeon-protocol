@@ -61,8 +61,8 @@ async def generate_image(
 @router.post("/images/upscale", response_model=JobResponse)
 async def upscale_image(
     image_url: str,
-    scale: int = 4,
     background_tasks: BackgroundTasks,
+    scale: int = 4,
     current_user: AuthenticatedUser = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -159,9 +159,9 @@ async def generate_video(
 @router.post("/videos/image-to-video", response_model=JobResponse)
 async def image_to_video(
     image_url: str,
+    background_tasks: BackgroundTasks,
     motion_strength: float = 0.8,
     duration: int = 5,
-    background_tasks: BackgroundTasks,
     current_user: AuthenticatedUser = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):

@@ -242,6 +242,69 @@ async def delete_workflow(
 # Background processing functions
 async def process_workflow_execution(job_id: int, workflow_id: int, trigger_data: Dict[str, Any]):
     """Process workflow execution in background"""
-    # This would implement the workflow engine logic
-    # For now, it's a placeholder
-    pass
+    try:
+        from ..agents.orchestration import aeon_orchestrator
+        from ..database.neon_db import get_db
+
+        # Get workflow definition from database
+        async with get_db() as db:
+            result = await db.execute(
+                select(Workflow).where(Workflow.id == workflow_id)
+            )
+            workflow = result.scalar_one_or_none()
+
+            if not workflow:
+                raise Exception(f"Workflow {workflow_id} not found")
+
+            workflow_definition = workflow.definition
+
+            # Check if this is a predefined workflow
+            if "workflow_type" in workflow_definition:
+                workflow_type = workflow_definition["workflow_type"]
+
+                # Execute predefined workflow
+                if workflow_type in aeon_orchestrator.workflows:
+                    results = await aeon_orchestrator.execute_workflow(workflow_type, trigger_data)
+                else:
+                    # Execute custom workflow
+                    agent_types = workflow_definition.get("agents", [])
+                    input_mappings = workflow_definition.get("input_mappings", [])
+                    results = await aeon_orchestrator.execute_custom_chain(
+                        agent_types, trigger_data, input_mappings
+                    )
+            else:
+                # Legacy workflow format - execute as custom chain
+                agent_types = workflow_definition.get("steps", [])
+                results = await aeon_orchestrator.execute_custom_chain(agent_types, trigger_data)
+
+            # Update job with results
+            job = await db.get(Job, job_id)
+            if job:
+                job.status = JobStatus.COMPLETED
+                job.output_data = {
+                    "workflow_results": [result.to_dict() for result in results],
+                    "execution_summary": {
+                        "total_steps": len(results),
+                        "successful_steps": sum(1 for r in results if r.success),
+                        "failed_steps": sum(1 for r in results if not r.success),
+                        "workflow_id": workflow_id
+                    }
+                }
+
+                # Update workflow statistics
+                workflow.trigger_count += 1
+                if all(result.success for result in results):
+                    workflow.success_count += 1
+                else:
+                    workflow.error_count += 1
+
+                await db.commit()
+
+    except Exception as e:
+        # Update job with error
+        async with get_db() as db:
+            job = await db.get(Job, job_id)
+            if job:
+                job.status = JobStatus.FAILED
+                job.error_message = str(e)
+                await db.commit()

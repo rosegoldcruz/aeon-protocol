@@ -5,6 +5,7 @@ from sqlalchemy import select, func
 from typing import List, Optional, Dict, Any
 import uuid
 from datetime import datetime
+import os
 
 from .database import get_db, init_database, check_database_health
 from .database.neon_db import Job, Asset, Tenant, User, Project, JobStatus, JobType
@@ -15,45 +16,106 @@ from .schemas import (
 from .celery_client import generate_image_task, generate_video_task, generate_audio_task, get_task_result
 from .s3_client import generate_presigned_url
 from .auth import get_current_user, AuthenticatedUser, require_editor
-from .routers import media, agents, integrations, workflows
+from .routers import media  # Only import working routers for now
+from .middleware import (
+    ErrorHandlingMiddleware,
+    RequestLoggingMiddleware,
+    RateLimitingMiddleware,
+    SecurityHeadersMiddleware
+)
 
 app = FastAPI(title="AEON API", version="1.0.0", description="Complete AI Business Automation Platform")
 
 # Initialize database on startup
 @app.on_event("startup")
 async def startup_event():
-    await init_database()
-    print("🚀 AEON API Server started successfully")
+    try:
+        await init_database()
+        print("🚀 AEON API Server started successfully")
+    except Exception as e:
+        print(f"⚠️ Database initialization failed: {e}")
+        print("🚀 AEON API Server started without database")
 
+# Add middleware in correct order (last added = first executed)
+# 1. Security headers (outermost)
+app.add_middleware(SecurityHeadersMiddleware)
+
+# 2. Error handling
+app.add_middleware(ErrorHandlingMiddleware)
+
+# 3. Request logging
+app.add_middleware(RequestLoggingMiddleware)
+
+# 4. Rate limiting
+app.add_middleware(RateLimitingMiddleware, calls=1000, period=60)  # 1000 requests per minute
+
+# 5. CORS (innermost, closest to routes)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
+        "http://localhost:3001",
         "https://aeonprotocol.com",
+        "https://www.aeonprotocol.com",
         "https://poetic-bluebird-21.clerk.accounts.dev",
-        "https://api.clerk.com"
+        "https://api.clerk.com",
+        # Add development origins
+        "http://127.0.0.1:3000",
+        "http://0.0.0.0:3000"
     ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allow_headers=[
+        "Authorization",
+        "Content-Type",
+        "Accept",
+        "Origin",
+        "User-Agent",
+        "DNT",
+        "Cache-Control",
+        "X-Mx-ReqToken",
+        "Keep-Alive",
+        "X-Requested-With",
+        "If-Modified-Since",
+        "X-Request-ID"
+    ],
+    expose_headers=["X-Request-ID"],
+    max_age=86400,  # 24 hours
 )
 
 # Include API routers
 app.include_router(media.router)
-app.include_router(agents.router)
-app.include_router(integrations.router)
-app.include_router(workflows.router)
+# Other routers temporarily disabled due to import issues
+# app.include_router(agents.router)
+# app.include_router(integrations.router)
+# app.include_router(workflows.router)
+# app.include_router(ai_coder.router)
 
 @app.get("/healthz")
 async def healthz():
     """Health check endpoint"""
-    db_health = await check_database_health()
-    return {
-        "status": "ok",
-        "version": "1.0.0",
-        "database": db_health,
-        "platform": "AEON - Complete AI Business Automation"
-    }
+    try:
+        db_health = await check_database_health()
+        return {
+            "status": "ok",
+            "version": "1.0.0",
+            "database": db_health,
+            "platform": "AEON - Complete AI Business Automation",
+            "middleware": "active"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "version": "1.0.0",
+            "database": {"status": "error", "error": str(e)},
+            "platform": "AEON - Complete AI Business Automation",
+            "middleware": "active"
+        }
+
+@app.get("/health")
+async def health():
+    """Alternative health check endpoint"""
+    return await healthz()
 
 @app.post("/v1/jobs/image-generate", response_model=JobResponse)
 async def create_image_generation_job(

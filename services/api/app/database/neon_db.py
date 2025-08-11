@@ -142,7 +142,7 @@ class Asset(Base):
     s3_bucket = Column(String(255), nullable=False)
     s3_key = Column(String(500), nullable=False)
     file_size = Column(Integer)
-    metadata = Column(JSON, default={})
+    metadata_json = Column(JSON, default={})
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class Agent(Base):
