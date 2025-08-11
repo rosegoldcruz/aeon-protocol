@@ -10,7 +10,14 @@ const isProtectedRoute = createRouteMatcher([
   '/workflows(.*)'
 ])
 
+const isPublicApiRoute = createRouteMatcher([
+  '/api/init-db'
+])
+
 export default clerkMiddleware((auth, req) => {
+  // Skip auth for public API routes
+  if (isPublicApiRoute(req)) return
+
   if (isProtectedRoute(req)) auth().protect()
 })
 
