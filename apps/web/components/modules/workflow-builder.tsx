@@ -16,7 +16,6 @@ import {
   Trash2,
   ArrowRight,
   Settings,
-  Zap,
   Video,
   FileText,
   BarChart3,
