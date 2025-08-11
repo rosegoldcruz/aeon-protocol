@@ -1,6 +1,5 @@
 import { neon } from '@neondatabase/serverless';
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 
 export default async function CommentsPage() {
   // Server Action to create a comment
@@ -8,7 +7,7 @@ export default async function CommentsPage() {
     'use server';
     
     // Connect to the Neon database
-    const sql = neon(process.env.DATABASE_URL!);
+    const sql = neon(process.env['DATABASE_URL']!);
     const comment = formData.get('comment') as string;
     
     // Validate comment
@@ -29,7 +28,7 @@ export default async function CommentsPage() {
 
   // Fetch existing comments
   async function getComments() {
-    const sql = neon(process.env.DATABASE_URL!);
+    const sql = neon(process.env['DATABASE_URL']!);
     try {
       const comments = await sql`
         SELECT id, comment, created_at 

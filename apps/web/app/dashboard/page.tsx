@@ -13,8 +13,6 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  Video,
-  Music,
   Bot,
   Briefcase,
   Sparkles,
@@ -23,25 +21,15 @@ import {
   Headphones,
   Users,
   BarChart3,
-  Settings,
   Zap,
   Code,
-  Database,
   Globe,
   Shield,
   Workflow,
-  Brain,
-  Target,
-  MessageSquare,
-  ShoppingCart,
-  FileText,
-  Calendar,
-  Mail,
-  Phone,
-  DollarSign,
   TrendingUp,
-  PieChart,
-  Activity
+  Activity,
+  ShoppingCart,
+  Brain
 } from "lucide-react"
 import { ImageStudio } from "@/components/modules/image-studio"
 import { VideoHub } from "@/components/modules/video-hub"
@@ -110,6 +98,7 @@ export default function DashboardPage() {
       const interval = setInterval(fetchJobs, 3000) // Poll every 3 seconds
       return () => clearInterval(interval)
     }
+    return () => {} // Return empty cleanup function for other code paths
   }, [authLoaded, userLoaded, user])
 
   useEffect(() => {

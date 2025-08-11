@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    const sql = neon(process.env.DATABASE_URL!);
+    const sql = neon(process.env['DATABASE_URL']!);
     
     // Create comments table if it doesn't exist
     await sql`

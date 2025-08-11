@@ -2,23 +2,19 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Slider } from "@/components/ui/slider"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { 
-  Loader2, 
-  Headphones, 
-  Mic, 
-  Music, 
+import {
+  Loader2,
+  Headphones,
+  Mic,
+  Music,
   Volume2,
   Settings,
   Sparkles,
-  Upload,
-  Download,
-  Wand2,
   Languages,
   UserCheck
 } from "lucide-react"
@@ -34,7 +30,6 @@ export function AudioSuite({ onGenerate, isGenerating }: AudioSuiteProps) {
   const [stability, setStability] = useState([0.5])
   const [similarityBoost, setSimilarityBoost] = useState([0.5])
   const [style, setStyle] = useState([0])
-  const [speakerBoost, setSpeakerBoost] = useState([true])
 
   const handleGenerate = () => {
     onGenerate({
@@ -42,8 +37,7 @@ export function AudioSuite({ onGenerate, isGenerating }: AudioSuiteProps) {
       voice_id: voiceId,
       stability: stability[0],
       similarity_boost: similarityBoost[0],
-      style: style[0],
-      use_speaker_boost: speakerBoost[0]
+      style: style[0]
     })
   }
 
@@ -159,7 +153,7 @@ export function AudioSuite({ onGenerate, isGenerating }: AudioSuiteProps) {
                 {/* Voice Settings */}
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-white">Stability: {stability[0].toFixed(2)}</Label>
+                    <Label className="text-white">Stability: {(stability[0] || 0.5).toFixed(2)}</Label>
                     <Slider
                       value={stability}
                       onValueChange={setStability}
@@ -174,7 +168,7 @@ export function AudioSuite({ onGenerate, isGenerating }: AudioSuiteProps) {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-white">Similarity Boost: {similarityBoost[0].toFixed(2)}</Label>
+                    <Label className="text-white">Similarity Boost: {(similarityBoost[0] || 0.5).toFixed(2)}</Label>
                     <Slider
                       value={similarityBoost}
                       onValueChange={setSimilarityBoost}
@@ -189,7 +183,7 @@ export function AudioSuite({ onGenerate, isGenerating }: AudioSuiteProps) {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-white">Style: {style[0].toFixed(2)}</Label>
+                    <Label className="text-white">Style: {(style[0] || 0).toFixed(2)}</Label>
                     <Slider
                       value={style}
                       onValueChange={setStyle}

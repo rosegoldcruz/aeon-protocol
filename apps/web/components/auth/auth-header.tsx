@@ -1,9 +1,7 @@
 "use client"
 
 import { UserButton, useUser } from '@clerk/nextjs'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { User, Settings, LogOut } from 'lucide-react'
+import { User } from 'lucide-react'
 
 export function AuthHeader() {
   const { user, isLoaded } = useUser()

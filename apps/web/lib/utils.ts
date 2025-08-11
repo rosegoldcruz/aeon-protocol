@@ -5,7 +5,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000"
+export const API_BASE_URL = process.env['NEXT_PUBLIC_BACKEND_URL'] || "http://localhost:8000"
 
 export async function apiRequest(endpoint: string, options: RequestInit = {}, token?: string) {
   const url = `${API_BASE_URL}${endpoint}`

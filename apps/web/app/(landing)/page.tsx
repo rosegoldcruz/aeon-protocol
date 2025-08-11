@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowRight, Bot, Briefcase, Image, Video, Music, Zap, Shield, Globe, Users, TrendingUp, Sparkles } from "lucide-react"
+import { ArrowRight, Bot, Briefcase, Image, Zap, Shield, Users, Sparkles } from "lucide-react"
 import Link from "next/link"
 
 export default function LandingPage() {

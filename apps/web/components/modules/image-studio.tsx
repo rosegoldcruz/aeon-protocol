@@ -3,20 +3,17 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Slider } from "@/components/ui/slider"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { 
-  Loader2, 
-  Palette, 
-  Wand2, 
-  Upload, 
-  Download, 
+import {
+  Loader2,
+  Palette,
+  Wand2,
   Settings,
   Sparkles,
-  Image as ImageIcon,
   Scissors,
   Maximize,
   Paintbrush
