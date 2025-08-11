@@ -25,11 +25,7 @@ services:
       - ../.env.local
     environment:
       - REDIS_URL=redis://redis:6379/0
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
-      - POSTGRES_DB=aeon
-      - POSTGRES_USER=aeon
-      - POSTGRES_PASSWORD=aeon_dev_password
+      - DATABASE_URL=postgres://neondb_owner:npg_uD6OmlzEb0Lh@ep-aged-snow-ad22bt8l-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require
       - S3_ENDPOINT=http://localstack:4566
       - AWS_ACCESS_KEY_ID=localstack
       - AWS_SECRET_ACCESS_KEY=localstack
@@ -39,7 +35,6 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - postgres
       - redis
       - localstack
 
@@ -61,16 +56,7 @@ services:
       - redis
       - localstack
 
-  postgres:
-    image: postgres:15
-    environment:
-      - POSTGRES_DB=aeon
-      - POSTGRES_USER=aeon
-      - POSTGRES_PASSWORD=aeon_dev_password
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+  # PostgreSQL removed - using Neon cloud database
 
   redis:
     image: redis:7
@@ -88,6 +74,5 @@ services:
       - "localstack:/var/lib/localstack"
 
 volumes:
-  pgdata:
   localstack:
 

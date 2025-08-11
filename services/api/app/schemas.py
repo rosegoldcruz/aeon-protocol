@@ -7,6 +7,12 @@ class JobType(str, Enum):
     IMAGE_GENERATION = "image_generation"
     VIDEO_GENERATION = "video_generation"
     AUDIO_GENERATION = "audio_generation"
+    AGENT_TASK = "agent_task"
+
+class MediaType(str, Enum):
+    IMAGE = "image"
+    VIDEO = "video"
+    AUDIO = "audio"
 
 class JobStatus(str, Enum):
     PENDING = "pending"
@@ -152,3 +158,50 @@ class ErrorResponse(BaseModel):
     error: str
     message: str
     details: Optional[Dict[str, Any]] = None
+
+# AI Agent Schemas
+class AgentTaskInput(BaseModel):
+    task: str
+    parameters: Dict[str, Any] = {}
+
+class AgentResponse(BaseModel):
+    id: int
+    name: str
+    type: str
+    description: Optional[str] = None
+    configuration: Dict[str, Any] = {}
+    is_active: bool
+    created_at: datetime
+
+# Integration Schemas
+class IntegrationCreateInput(BaseModel):
+    name: str
+    credentials: Dict[str, Any]
+    settings: Optional[Dict[str, Any]] = None
+
+class IntegrationResponse(BaseModel):
+    id: int
+    provider: str
+    name: str
+    is_active: bool
+    last_sync: Optional[datetime] = None
+    created_at: datetime
+
+# Workflow Schemas
+class WorkflowCreateInput(BaseModel):
+    name: str
+    description: Optional[str] = None
+    definition: Dict[str, Any]
+    is_active: bool = True
+
+class WorkflowResponse(BaseModel):
+    id: int
+    name: str
+    description: Optional[str] = None
+    definition: Dict[str, Any]
+    is_active: bool
+    trigger_count: int
+    success_count: int
+    error_count: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None

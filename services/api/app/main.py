@@ -6,8 +6,8 @@ from typing import List, Optional, Dict, Any
 import uuid
 from datetime import datetime
 
-from .database import get_db
-from .models import Job, Asset, Tenant, User, Project, JobStatus, JobType
+from .database import get_db, init_database, check_database_health
+from .database.neon_db import Job, Asset, Tenant, User, Project, JobStatus, JobType
 from .schemas import (
     JobCreate, JobResponse, JobListResponse, ImageGenerationInput,
     AssetResponse, ErrorResponse, VideoGenerationInput, AudioGenerationInput
@@ -15,13 +15,21 @@ from .schemas import (
 from .celery_client import generate_image_task, generate_video_task, generate_audio_task, get_task_result
 from .s3_client import generate_presigned_url
 from .auth import get_current_user, AuthenticatedUser, require_editor
+from .routers import media, agents, integrations, workflows
 
-app = FastAPI(title="AEON API", version="0.1.0")
+app = FastAPI(title="AEON API", version="1.0.0", description="Complete AI Business Automation Platform")
+
+# Initialize database on startup
+@app.on_event("startup")
+async def startup_event():
+    await init_database()
+    print("🚀 AEON API Server started successfully")
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
+        "https://aeonprotocol.com",
         "https://poetic-bluebird-21.clerk.accounts.dev",
         "https://api.clerk.com"
     ],
@@ -30,9 +38,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Include API routers
+app.include_router(media.router)
+app.include_router(agents.router)
+app.include_router(integrations.router)
+app.include_router(workflows.router)
+
 @app.get("/healthz")
-def healthz():
-    return {"status": "ok"}
+async def healthz():
+    """Health check endpoint"""
+    db_health = await check_database_health()
+    return {
+        "status": "ok",
+        "version": "1.0.0",
+        "database": db_health,
+        "platform": "AEON - Complete AI Business Automation"
+    }
 
 @app.post("/v1/jobs/image-generate", response_model=JobResponse)
 async def create_image_generation_job(

@@ -1,17 +1,18 @@
 import os
-from sqlalchemy import create_engine
+
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-# Database URL from environment
-POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
-POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
-POSTGRES_DB = os.getenv("POSTGRES_DB", "aeon")
-POSTGRES_USER = os.getenv("POSTGRES_USER", "aeon")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "aeon_dev_password")
+# Neon PostgreSQL Database configuration
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgres://neondb_owner:npg_uD6OmlzEb0Lh@ep-aged-snow-ad22bt8l-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require"
+)
 
-DATABASE_URL = f"postgresql+asyncpg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
+# Convert postgres:// to postgresql+asyncpg:// for SQLAlchemy async
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
 
 # Async engine and session
 engine = create_async_engine(DATABASE_URL, echo=True)

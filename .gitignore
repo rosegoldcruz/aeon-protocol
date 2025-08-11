@@ -58,3 +58,4 @@ dist/
 /.augment/rules*
 /exec summary*
 /the protocol*
+.vercel
