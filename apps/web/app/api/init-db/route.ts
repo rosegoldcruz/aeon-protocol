@@ -1,28 +1,21 @@
-import { neon } from '@neondatabase/serverless';
-import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server'
+import { initializeDatabase } from '@/lib/db'
 
 export async function GET() {
   try {
-    const sql = neon(process.env['DATABASE_URL']!);
-    
-    // Create comments table if it doesn't exist
-    await sql`
-      CREATE TABLE IF NOT EXISTS comments (
-        id SERIAL PRIMARY KEY,
-        comment TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `;
-    
+    await initializeDatabase()
     return NextResponse.json({ 
-      success: true, 
-      message: 'Database initialized successfully' 
-    });
+      message: 'Database initialized successfully',
+      status: 'success'
+    })
   } catch (error) {
-    console.error('Error initializing database:', error);
+    console.error('Database initialization failed:', error)
     return NextResponse.json(
-      { success: false, error: 'Failed to initialize database' },
+      { 
+        error: 'Database initialization failed',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
-    );
+    )
   }
 }
