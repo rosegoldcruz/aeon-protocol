@@ -155,12 +155,6 @@ export function WorkflowBuilder({ onSave, onExecute, isExecuting }: WorkflowBuil
     setSteps(prev => prev.filter(step => step.id !== stepId))
   }, [])
 
-  const updateStep = useCallback((stepId: string, updates: Partial<WorkflowStep>) => {
-    setSteps(prev => prev.map(step => 
-      step.id === stepId ? { ...step, ...updates } : step
-    ))
-  }, [])
-
   const handleSave = useCallback(() => {
     const workflow = {
       name: workflowName,
