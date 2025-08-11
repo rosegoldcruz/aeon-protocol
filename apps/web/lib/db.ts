@@ -6,8 +6,12 @@ export const sql = neon(process.env['DATABASE_URL']!);
 // Create comments table if it doesn't exist
 export async function initializeDatabase() {
   try {
+    // Drop existing table if it exists to recreate with proper structure
+    await sql`DROP TABLE IF EXISTS comments`;
+
+    // Create table with proper structure
     await sql`
-      CREATE TABLE IF NOT EXISTS comments (
+      CREATE TABLE comments (
         id SERIAL PRIMARY KEY,
         comment TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -16,6 +20,7 @@ export async function initializeDatabase() {
     console.log('Database initialized successfully');
   } catch (error) {
     console.error('Error initializing database:', error);
+    throw error;
   }
 }
 
