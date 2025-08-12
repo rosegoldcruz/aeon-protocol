@@ -1,6 +1,8 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 
+const CLERK_ENABLED = Boolean(process.env.CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY)
+
 const isProtectedRoute = createRouteMatcher([
   '/dashboard(.*)',
   '/agents(.*)',
@@ -23,6 +25,11 @@ const isPublicRoute = createRouteMatcher([
 ])
 
 export default clerkMiddleware((auth, req) => {
+  // If Clerk is not configured, allow all requests
+  if (!CLERK_ENABLED) {
+    return NextResponse.next()
+  }
+
   // Health check for middleware – return early for OPTIONS and HEAD
   if (req.method === 'OPTIONS' || req.method === 'HEAD') {
     return NextResponse.next()
