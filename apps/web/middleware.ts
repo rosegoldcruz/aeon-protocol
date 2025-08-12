@@ -20,6 +20,9 @@ const isPublicApiRoute = createRouteMatcher([
 
 const isPublicRoute = createRouteMatcher([
   '/',
+  '/pricing',
+  '/privacy',
+  '/terms',
   '/sign-in(.*)',
   '/sign-up(.*)',
   '/api/init-db'
