@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from "react"
@@ -304,3 +305,4 @@ export function VideoHub({ onGenerate, isGenerating }: VideoHubProps) {
     </div>
   )
 }
+

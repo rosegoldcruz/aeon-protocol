@@ -1,3 +1,4 @@
+
 """
 Complete Media Generation API Routes
 """
@@ -125,36 +126,10 @@ async def remove_background(
 
 # Video Generation Endpoints
 @router.post("/videos/generate", response_model=JobResponse)
-async def generate_video(
-    input_data: VideoGenerationInput,
-    background_tasks: BackgroundTasks,
-    current_user: AuthenticatedUser = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
-):
-    """Generate videos using Runway, Pika, Luma, or Hailuo"""
-    try:
-        job = Job(
-            tenant_id=current_user.tenant_id,
-            type=JobType.VIDEO_GENERATION,
-            status=JobStatus.PENDING,
-            input_data=input_data.dict(),
-            provider=input_data.provider
-        )
-        db.add(job)
-        await db.commit()
-        await db.refresh(job)
-        
-        background_tasks.add_task(process_video_generation, job.id, input_data.dict())
-        
-        return JobResponse(
-            id=job.id,
-            type=job.type,
-            status=job.status,
-            input_data=job.input_data,
-            created_at=job.created_at
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to create video generation job: {str(e)}")
+async def generate_video(input_data: VideoGenerationInput, background_tasks: BackgroundTasks, current_user: AuthenticatedUser = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    job = Job(tenant_id=current_user.tenant_id, type=JobType.VIDEO_GENERATION, status=JobStatus.PENDING, input_data=input_data.dict(), provider=input_data.provider)
+    background_tasks.add_task(process_video_generation, job.id, input_data.dict())
+    return JobResponse(id=job.id, type=job.type, status=job.status, input_data=job.input_data, created_at=job.created_at)
 
 @router.post("/videos/image-to-video", response_model=JobResponse)
 async def image_to_video(
@@ -296,3 +271,4 @@ async def process_text_to_speech(job_id: int, input_data: Dict[str, Any]):
 async def process_voice_cloning(job_id: int, audio_files: List[str], voice_name: str, description: str):
     """Process voice cloning in background"""
     pass
+

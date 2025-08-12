@@ -1,3 +1,4 @@
+
 import os
 import replicate
 import boto3
@@ -101,46 +102,23 @@ def generate_image(self, prompt: str, job_id: int = None, **kwargs) -> dict:
 def generate_video(self, prompt: str, job_id: int = None, provider: str = "runway", video_type: str = "text_to_video", **kwargs) -> dict:
     """Generate video using specified provider"""
     try:
-        # Import here to avoid circular imports
-        import sys
-        import os
-        sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'api'))
-
         from app.video_providers import generate_video as generate_video_provider, VideoProvider
-
-        # Convert string to enum
         provider_enum = VideoProvider(provider)
-
-        # Generate video
-        result = asyncio.run(generate_video_provider(
-            provider=provider_enum,
-            prompt=prompt,
-            video_type=video_type,
-            **kwargs
-        ))
-
-        # Store video in S3 if URL is provided
+        result = asyncio.run(generate_video_provider(provider=provider_enum, prompt=prompt, video_type=video_type, **kwargs))
         stored_videos = []
         if "video_url" in result:
             video_url = result["video_url"]
-
-            # Download video
             response = requests.get(video_url)
             response.raise_for_status()
-
-            # Generate S3 key
             timestamp = datetime.now().strftime("%Y/%m/%d")
             filename = f"{uuid.uuid4()}.mp4"
             s3_key = f"videos/{timestamp}/{filename}"
-
-            # Upload to S3
             s3_client.put_object(
                 Bucket=S3_BUCKET,
                 Key=s3_key,
                 Body=response.content,
                 ContentType="video/mp4"
             )
-
             stored_videos.append({
                 "s3_key": s3_key,
                 "s3_bucket": S3_BUCKET,
@@ -148,7 +126,6 @@ def generate_video(self, prompt: str, job_id: int = None, provider: str = "runwa
                 "provider": provider,
                 "duration": kwargs.get("duration", 5)
             })
-
         return {
             "videos": stored_videos,
             "job_id": job_id,
@@ -156,7 +133,6 @@ def generate_video(self, prompt: str, job_id: int = None, provider: str = "runwa
             "video_type": video_type,
             "provider_response": result
         }
-
     except Exception as e:
         self.update_state(
             state="FAILURE",
@@ -436,4 +412,5 @@ def stitch_scenes_with_transitions(scenes: list, platform: str) -> str:
 
     except Exception as e:
         raise Exception(f"Video stitching failed: {str(e)}")
+
 

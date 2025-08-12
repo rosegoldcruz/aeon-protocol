@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -132,12 +133,7 @@ export default function DashboardPage() {
 
       if (activeTab === "video") {
         endpoint = "/v1/jobs/video-generate"
-        payload = {
-          prompt: prompt.trim(),
-          provider: "runway",
-          duration: 5,
-          resolution: "1280x768"
-        }
+        payload = { prompt: prompt.trim(), provider: "runway", duration: 5, resolution: "1280x768" }
       } else if (activeTab === "audio") {
         endpoint = "/v1/jobs/audio-generate"
         payload = {
@@ -146,10 +142,7 @@ export default function DashboardPage() {
         }
       }
 
-      await apiRequest(endpoint, {
-        method: "POST",
-        body: JSON.stringify(payload)
-      }, token)
+      await apiRequest(endpoint, { method: "POST", body: JSON.stringify(payload) }, token)
       setPrompt("")
       fetchJobs() // Refresh jobs list
     } catch (error) {
@@ -592,3 +585,4 @@ export default function DashboardPage() {
     </div>
   )
 }
+
