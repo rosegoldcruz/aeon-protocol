@@ -16,8 +16,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "REPLICATE_API_TOKEN not configured" }, { status: 500 })
     }
 
-    // Minimax Hailuo 2 (text-to-video) version id (stable as of 2025-08)
-    // Fallback to a known earlier version if needed
+    // Minimax Hailuo 2 (text-to-video) version id
     const MODEL_VERSION = process.env["REPLICATE_HAILUO_VERSION_ID"] ||
       "d615361988ffcbadecfe52b95dd9302a8d6e1069c908a05104f36b651aea6c95"
 
@@ -25,7 +24,8 @@ export async function POST(request: Request) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Token ${token}`,
+        Authorization: `Bearer ${token}`,
+        Prefer: "wait=30",
       },
       body: JSON.stringify({
         version: MODEL_VERSION,

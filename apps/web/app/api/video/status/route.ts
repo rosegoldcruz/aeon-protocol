@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     if (!token) return NextResponse.json({ error: "REPLICATE_API_TOKEN not configured" }, { status: 500 })
 
     const resp = await fetch(`https://api.replicate.com/v1/predictions/${id}`, {
-      headers: { Authorization: `Token ${token}` },
+      headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     })
     const data = await resp.json()
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: data?.error || "Replicate error" }, { status: resp.status })
     }
 
-    // On success, Replicate returns output as a URL string (mp4). Normalize fields
+    // On success, Replicate may require authenticated file fetch. Pass-through URL as-is.
     return NextResponse.json({
       id: data.id,
       status: data.status,
