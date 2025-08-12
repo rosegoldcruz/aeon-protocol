@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowRight, Bot, Briefcase, Image, Sparkles } from "lucide-react"
+import Link from "next/link"
 
 // Force static generation to avoid API dependency issues
 export const dynamic = 'force-static'
@@ -17,11 +18,11 @@ export default function HomePage() {
               <span className="text-2xl font-bold text-white">AEON</span>
             </div>
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" className="text-white hover:text-blue-400" onClick={() => window.location.href = '/sign-in'}>
-                Sign In
+              <Button variant="ghost" className="text-white hover:text-blue-400" asChild>
+                <Link href="/sign-in">Sign In</Link>
               </Button>
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => window.location.href = '/sign-up'}>
-                Get Started
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white" asChild>
+                <Link href="/sign-up">Get Started</Link>
               </Button>
             </div>
           </div>
@@ -44,10 +45,12 @@ export default function HomePage() {
             <Button
               size="lg"
               className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 text-lg"
-              onClick={() => window.location.href = '/sign-up'}
+              asChild
             >
-              Start Free Trial
-              <ArrowRight className="ml-2 h-5 w-5" />
+              <Link href="/sign-up" className="inline-flex items-center">
+                Start Free Trial
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
             </Button>
           </div>
         </div>

@@ -1,7 +1,8 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
+import type { NextRequest, NextFetchEvent } from 'next/server'
 
-const CLERK_ENABLED = Boolean(process.env.CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY)
+const CLERK_ENABLED = Boolean(process.env['CLERK_PUBLISHABLE_KEY'] && process.env['CLERK_SECRET_KEY'])
 
 const isProtectedRoute = createRouteMatcher([
   '/dashboard(.*)',
@@ -24,29 +25,20 @@ const isPublicRoute = createRouteMatcher([
   '/api/init-db'
 ])
 
-export default clerkMiddleware((auth, req) => {
-  // If Clerk is not configured, allow all requests
-  if (!CLERK_ENABLED) {
+export default function middleware(req: NextRequest, event: NextFetchEvent) {
+  // No-op middleware when Clerk is not configured or for public routes/methods
+  if (!CLERK_ENABLED || req.method === 'OPTIONS' || req.method === 'HEAD' || isPublicApiRoute(req) || isPublicRoute(req)) {
     return NextResponse.next()
   }
 
-  // Health check for middleware – return early for OPTIONS and HEAD
-  if (req.method === 'OPTIONS' || req.method === 'HEAD') {
+  // Invoke Clerk middleware only when needed
+  return clerkMiddleware((auth, request) => {
+    if (isProtectedRoute(request)) {
+      auth().protect()
+    }
     return NextResponse.next()
-  }
-
-  // Skip auth for public routes and API routes
-  if (isPublicApiRoute(req) || isPublicRoute(req)) {
-    return NextResponse.next()
-  }
-
-  // Protect only matched routes
-  if (isProtectedRoute(req)) {
-    auth().protect()
-  }
-
-  return NextResponse.next()
-})
+  })(req, event)
+}
 
 export const config = {
   // Exclude static files, _next, and images from middleware; include app routes
