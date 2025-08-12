@@ -1,4 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { NextResponse } from 'next/server'
 
 const isProtectedRoute = createRouteMatcher([
   '/dashboard(.*)',
@@ -22,12 +23,28 @@ const isPublicRoute = createRouteMatcher([
 ])
 
 export default clerkMiddleware((auth, req) => {
-  // Skip auth for public routes and API routes
-  if (isPublicApiRoute(req) || isPublicRoute(req)) return
+  // Health check for middleware – return early for OPTIONS and HEAD
+  if (req.method === 'OPTIONS' || req.method === 'HEAD') {
+    return NextResponse.next()
+  }
 
-  if (isProtectedRoute(req)) auth().protect()
+  // Skip auth for public routes and API routes
+  if (isPublicApiRoute(req) || isPublicRoute(req)) {
+    return NextResponse.next()
+  }
+
+  // Protect only matched routes
+  if (isProtectedRoute(req)) {
+    auth().protect()
+  }
+
+  return NextResponse.next()
 })
 
 export const config = {
-  matcher: ['/((?!.*\\..*|_next).*)', '/', '/(api|trpc)(.*)'],
+  // Exclude static files, _next, and images from middleware; include app routes
+  matcher: [
+    '/((?!_next|.*\\..*|favicon.ico|robots.txt|sitemap.xml).*)',
+    '/(api|trpc)(.*)'
+  ],
 }
