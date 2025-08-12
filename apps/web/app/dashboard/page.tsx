@@ -141,7 +141,6 @@ export default function DashboardPage() {
           voice_id: "21m00Tcm4TlvDq8ikWAM"
         }
       }
-
       await apiRequest(endpoint, { method: "POST", body: JSON.stringify(payload) }, token)
       setPrompt("")
       fetchJobs() // Refresh jobs list
@@ -504,12 +503,6 @@ export default function DashboardPage() {
 
                 {selectedModule === "video-hub" && (
                   <VideoHub
-                    onGenerate={(data) => {
-                      // Convert the advanced data to the simple format expected by handleGenerate
-                      setPrompt(data.prompt)
-                      setActiveTab("video")
-                      handleGenerate()
-                    }}
                     isGenerating={isGenerating}
                   />
                 )}
@@ -585,4 +578,5 @@ export default function DashboardPage() {
     </div>
   )
 }
+
 

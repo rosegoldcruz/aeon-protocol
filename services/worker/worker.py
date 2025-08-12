@@ -414,3 +414,4 @@ def stitch_scenes_with_transitions(scenes: list, platform: str) -> str:
         raise Exception(f"Video stitching failed: {str(e)}")
 
 
+

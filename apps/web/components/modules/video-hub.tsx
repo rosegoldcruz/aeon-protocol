@@ -1,7 +1,6 @@
-
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,42 +8,109 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  Loader2,
-  Film,
-  Play,
-  Settings,
-  Sparkles,
-  Video,
-  Scissors,
-  Wand2,
-  Camera,
-  Mic
-} from "lucide-react"
+import { Loader2, Film, Play, Settings, Sparkles, Video, Scissors, Wand2, Camera, Mic } from "lucide-react"
+
+
+interface LibraryItem {
+  id: string
+  prompt: string
+  createdAt: number
+  url: string
+  duration: number
+  resolution: string
+}
 
 interface VideoHubProps {
-  onGenerate: (data: any) => void
   isGenerating: boolean
 }
 
-export function VideoHub({ onGenerate, isGenerating }: VideoHubProps) {
+export function VideoHub({ isGenerating }: VideoHubProps) {
   const [prompt, setPrompt] = useState("")
-  const [provider, setProvider] = useState("runway")
-  const [duration, setDuration] = useState([5])
-  const [resolution, setResolution] = useState("1280x768")
+  const [provider, setProvider] = useState("replicate-hailuo")
+  const [duration, setDuration] = useState([6])
+  const [resolution, setResolution] = useState("768p")
   const [fps, setFps] = useState([24])
   const [seed, setSeed] = useState("")
 
-  const handleGenerate = () => {
-    onGenerate({
-      prompt: prompt.trim(),
-      provider,
-      duration: duration[0],
-      resolution,
-      fps: fps[0],
-      seed: seed ? parseInt(seed) : undefined
-    })
+  const [predictionId, setPredictionId] = useState<string | null>(null)
+  const [videoUrl, setVideoUrl] = useState<string | null>(null)
+  const [status, setStatus] = useState<string | null>(null) // used in UI texts
+  const [loading, setLoading] = useState(false)
+
+  const playerRef = useRef<HTMLVideoElement | null>(null)
+
+  const LIB_KEY = "aeon_video_library_v1"
+  const library: LibraryItem[] = useMemo(() => {
+    if (typeof window === "undefined") return []
+    try { return JSON.parse(localStorage.getItem(LIB_KEY) || "[]") } catch { return [] }
+  }, [])
+  const [items, setItems] = useState<LibraryItem[]>(library)
+
+  const saveToLibrary = (item: LibraryItem) => {
+    const next = [item, ...items].slice(0, 100)
+    setItems(next)
+    if (typeof window !== "undefined") localStorage.setItem(LIB_KEY, JSON.stringify(next))
   }
+
+  const handleGenerate = async () => {
+    setLoading(true)
+    setVideoUrl(null)
+    setStatus("starting")
+
+    try {
+      const resp = await fetch("/api/video/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: prompt.trim(), duration: duration[0], resolution }),
+      })
+      const data = await resp.json()
+      if (!resp.ok) throw new Error(data?.error || "Failed to start generation")
+      setPredictionId(data.id)
+    } catch (e) {
+      console.error(e)
+      setStatus("failed")
+      setLoading(false)
+    }
+  }
+
+  // Polling for status
+  useEffect(() => {
+    if (!predictionId) return
+    let mounted = true
+    const interval = setInterval(async () => {
+      try {
+        const resp = await fetch(`/api/video/status?id=${predictionId}`, { cache: "no-store" })
+        const data = await resp.json()
+        if (!resp.ok) throw new Error(data?.error || "status error")
+        if (!mounted) return
+        setStatus(data.status)
+        if (data.status === "succeeded" && data.output) {
+          setVideoUrl(data.output as string)
+          setLoading(false)
+          clearInterval(interval)
+          const item: LibraryItem = {
+            id: predictionId,
+            prompt: prompt.trim(),
+            createdAt: Date.now(),
+            url: data.output as string,
+            duration: duration[0] ?? 6,
+            resolution,
+          }
+          saveToLibrary(item)
+        }
+        if (["failed", "canceled"].includes(data.status)) {
+          setLoading(false)
+          clearInterval(interval)
+        }
+      } catch (e) {
+        console.error(e)
+        setLoading(false)
+        clearInterval(interval)
+      }
+    }, 2000)
+
+    return () => { mounted = false; clearInterval(interval) }
+  }, [predictionId])
 
   const providers = [
     { id: "runway", name: "Runway Gen-3", description: "High-quality cinematic videos" },
@@ -223,22 +289,62 @@ export function VideoHub({ onGenerate, isGenerating }: VideoHubProps) {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="aspect-video bg-gray-700 rounded-lg flex items-center justify-center">
-                  <div className="text-center text-gray-400">
-                    <Video className="h-12 w-12 mx-auto mb-2" />
-                    <p>Video preview will appear here</p>
-                  </div>
+                <div className="aspect-video bg-black rounded-lg flex items-center justify-center overflow-hidden">
+                  {videoUrl ? (
+                    <video
+                      ref={playerRef}
+                      className="w-full h-full"
+                      src={videoUrl}
+                      controls
+                      playsInline
+                    />
+                  ) : (
+                    <div className="text-center text-gray-400">
+                      {predictionId ? (
+                        <>
+                          <Loader2 className="h-8 w-8 mx-auto mb-2 animate-spin" />
+                          <p className="text-sm">Status: {status || "starting"}</p>
+                        </>
+                      ) : (
+                        <>
+                          <Video className="h-12 w-12 mx-auto mb-2" />
+                          <p>Video preview will appear here</p>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <Button onClick={handleGenerate} disabled={isGenerating || loading || !prompt.trim()} className="bg-blue-600 hover:bg-blue-700">
+                    {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Play className="h-4 w-4 mr-2" />}
+                    {loading ? "Generating..." : "Generate"}
+                  </Button>
+                  {videoUrl && (
+                    <Button asChild variant="outline" className="border-gray-600 text-white">
+                      <a href={videoUrl} download target="_blank" rel="noopener noreferrer">Download</a>
+                    </Button>
+                  )}
                 </div>
 
                 <div className="space-y-2">
-                  <h4 className="font-semibold text-white">Available Features</h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="p-2 bg-gray-700 rounded text-sm text-gray-300">Text-to-Video</div>
-                    <div className="p-2 bg-gray-700 rounded text-sm text-gray-300">Image-to-Video</div>
-                    <div className="p-2 bg-gray-700 rounded text-sm text-gray-300">Motion Control</div>
-                    <div className="p-2 bg-gray-700 rounded text-sm text-gray-300">Style Transfer</div>
-                    <div className="p-2 bg-gray-700 rounded text-sm text-gray-300">Auto-editing</div>
-                    <div className="p-2 bg-gray-700 rounded text-sm text-gray-300">Transitions</div>
+                  <h4 className="font-semibold text-white">Your Library</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {items.length === 0 && (
+                      <div className="col-span-full text-sm text-gray-400">No videos yet. Generate your first video above.</div>
+                    )}
+                    {items.map((it) => (
+                      <div key={it.id} className="bg-gray-700 rounded p-2 space-y-2">
+                        <div className="aspect-video bg-black rounded overflow-hidden">
+                          <video src={it.url} className="w-full h-full" controls={false} muted playsInline />
+                        </div>
+                        <div className="text-xs text-gray-300 truncate" title={it.prompt}>{it.prompt}</div>
+                        <div className="flex justify-between text-xs text-gray-400">
+                          <span>{new Date(it.createdAt).toLocaleString()}</span>
+                          <a href={it.url} download className="text-blue-400 hover:underline">Download</a>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </CardContent>
@@ -305,4 +411,5 @@ export function VideoHub({ onGenerate, isGenerating }: VideoHubProps) {
     </div>
   )
 }
+
 

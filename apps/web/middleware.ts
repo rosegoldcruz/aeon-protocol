@@ -15,7 +15,9 @@ const isProtectedRoute = createRouteMatcher([
 ])
 
 const isPublicApiRoute = createRouteMatcher([
-  '/api/init-db'
+  '/api/init-db',
+  '/api/video/generate',
+  '/api/video/status'
 ])
 
 const isPublicRoute = createRouteMatcher([
@@ -25,7 +27,9 @@ const isPublicRoute = createRouteMatcher([
   '/terms',
   '/sign-in(.*)',
   '/sign-up(.*)',
-  '/api/init-db'
+  '/api/init-db',
+  '/api/video/generate',
+  '/api/video/status'
 ])
 
 export default function middleware(req: NextRequest, event: NextFetchEvent) {
