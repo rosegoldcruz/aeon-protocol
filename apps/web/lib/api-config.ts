@@ -6,8 +6,8 @@
 // Environment-based API URL configuration
 const getApiBaseUrl = (): string => {
   // Check for explicit API URL override (highest priority)
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL;
+  if (process.env['NEXT_PUBLIC_API_URL']) {
+    return process.env['NEXT_PUBLIC_API_URL'];
   }
 
   // Environment-based defaults
