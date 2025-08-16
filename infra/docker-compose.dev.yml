@@ -9,7 +9,11 @@ services:
     env_file:
       - ../.env.local
     environment:
-      - NEXT_PUBLIC_BACKEND_URL=http://159.223.198.119:8000
+      # Use API service for development - Docker internal networking
+      - NEXT_PUBLIC_API_URL=http://api:8000/api
+      # Alternative: Use localhost for external access
+      # - NEXT_PUBLIC_BACKEND_HOST=localhost
+      # - NEXT_PUBLIC_BACKEND_PORT=8000
     ports:
       - "3000:3000"
     volumes:

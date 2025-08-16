@@ -56,7 +56,8 @@ class AEONAgentOrchestrator(AgentOrchestrator):
             ChainStep(
                 agent_type=AgentType.VIDEO_EDITOR,
                 input_mapping={
-                    "scenes": "scenes",
+                    "script_data": "script_data",  # Pass complete script data from Screenwriter
+                    "scenes": "scenes",            # Pass scene breakdown
                     "platform": "platform",
                     "style": "style",
                     "video_provider": "video_provider",

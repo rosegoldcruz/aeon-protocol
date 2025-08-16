@@ -36,6 +36,7 @@ export function VideoHub({ isGenerating }: VideoHubProps) {
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [status, setStatus] = useState<string | null>(null) // used in UI texts
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const playerRef = useRef<HTMLVideoElement | null>(null)
 
@@ -53,9 +54,10 @@ export function VideoHub({ isGenerating }: VideoHubProps) {
   }
 
   const handleGenerate = async () => {
-    setLoading(true)
+    setError(null)
     setVideoUrl(null)
     setStatus("starting")
+    setLoading(true)
 
     try {
       const resp = await fetch("/api/video/generate", {
@@ -64,11 +66,17 @@ export function VideoHub({ isGenerating }: VideoHubProps) {
         body: JSON.stringify({ prompt: prompt.trim(), duration: duration[0], resolution }),
       })
       const data = await resp.json()
-      if (!resp.ok) throw new Error(data?.error || "Failed to start generation")
+      if (!resp.ok) {
+        setStatus("failed")
+        setError(data?.error || "Failed to start prediction")
+        setLoading(false)
+        return
+      }
       setPredictionId(data.id)
     } catch (e) {
       console.error(e)
       setStatus("failed")
+      setError("Network error occurred")
       setLoading(false)
     }
   }
@@ -84,6 +92,9 @@ export function VideoHub({ isGenerating }: VideoHubProps) {
         if (!resp.ok) throw new Error(data?.error || "status error")
         if (!mounted) return
         setStatus(data.status)
+
+        if (data.error) setError(data.error)
+
         if (data.status === "succeeded" && data.output) {
           setVideoUrl(data.output as string)
           setLoading(false)
@@ -314,6 +325,10 @@ export function VideoHub({ isGenerating }: VideoHubProps) {
                     </div>
                   )}
                 </div>
+
+                {!videoUrl && error && (
+                  <p className="text-red-400 text-sm mt-2">Error: {error}</p>
+                )}
 
                 <div className="flex gap-2">
                   <Button onClick={handleGenerate} disabled={isGenerating || loading || !prompt.trim()} className="bg-blue-600 hover:bg-blue-700">

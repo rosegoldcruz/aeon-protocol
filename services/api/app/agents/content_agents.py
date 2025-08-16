@@ -24,97 +24,190 @@ class ScreenwriterAgent(BaseAgent):
 You create scripts specifically optimized for multi-scene video generation, with each scene designed to be 8-12 seconds for perfect video stitching."""
     
     def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Generate script with story analysis"""
+        """Generate script with detailed scene breakdown for video production pipeline"""
         self.validate_input(input_data, ["concept", "genre"])
-        
+
         concept = input_data["concept"]
         genre = input_data["genre"]
-        length = input_data.get("length", "short")
+        length = input_data.get("length", 120)  # Default 2 minutes in seconds
         target_audience = input_data.get("target_audience", "general")
-        
-        # Create detailed prompt
+        platform = input_data.get("platform", "social_media")
+
+        # Calculate optimal scene breakdown
+        if length <= 60:
+            scene_duration = 8
+            scene_count = max(6, length // scene_duration)
+        elif length <= 120:
+            scene_duration = 10
+            scene_count = max(8, length // scene_duration)
+        else:
+            scene_duration = 12
+            scene_count = max(10, length // scene_duration)
+
+        # Ensure total duration matches
+        scene_count = min(scene_count, length // 5)  # Minimum 5 seconds per scene
+        actual_scene_duration = length / scene_count
+
         user_prompt = f"""
-        Create a {length} {genre} script based on this concept: {concept}
-        Target audience: {target_audience}
-        
-        Please provide:
-        1. Complete script with proper formatting
-        2. Story structure analysis
-        3. Character development notes
-        4. Dialogue quality assessment
-        5. Commercial viability analysis
-        6. Suggestions for improvement
+        Create a compelling {genre} video script optimized for AI video generation pipeline.
+
+        SPECIFICATIONS:
+        - Concept: {concept}
+        - Total Duration: {length} seconds
+        - Target Scenes: {scene_count} scenes
+        - Scene Duration: {actual_scene_duration:.1f} seconds each
+        - Target Audience: {target_audience}
+        - Platform: {platform}
+
+        CRITICAL: Return ONLY valid JSON in this exact format:
+        {{
+            "title": "Engaging Video Title",
+            "summary": "Brief compelling summary",
+            "total_duration": {length},
+            "scene_count": {scene_count},
+            "scenes": [
+                {{
+                    "scene_number": 1,
+                    "duration": {actual_scene_duration:.1f},
+                    "start_time": 0,
+                    "end_time": {actual_scene_duration:.1f},
+                    "visual_description": "Extremely detailed visual description for AI video generation - be specific about objects, people, actions, lighting, colors, composition",
+                    "voiceover_text": "Exact narration text that will be spoken",
+                    "mood": "specific emotional tone",
+                    "camera_style": "camera angle and movement",
+                    "transition_to_next": "transition type",
+                    "key_visual_elements": ["element1", "element2", "element3"],
+                    "video_prompt": "Optimized prompt for video AI model"
+                }}
+            ],
+            "story_arc": {{
+                "setup_scenes": [1, 2],
+                "development_scenes": [3, 4, 5, 6],
+                "climax_scenes": [7, 8],
+                "resolution_scenes": [9, 10]
+            }},
+            "production_metadata": {{
+                "total_voiceover_words": 150,
+                "pacing": "dynamic/steady/slow",
+                "visual_style": "cinematic/documentary/animated",
+                "music_style": "upbeat/dramatic/ambient",
+                "platform_optimization": "specific platform notes"
+            }}
+        }}
+
+        REQUIREMENTS:
+        1. Each visual_description must be detailed enough for AI video generation
+        2. Each video_prompt should be optimized for video AI models (Runway, Pika, Luma)
+        3. Voiceover text should be natural and engaging
+        4. Scene timing must be precise
+        5. Visual elements should flow logically between scenes
+        6. Include smooth transitions
+        7. Optimize for {platform} platform
+
+        Generate {scene_count} scenes that tell a complete, engaging story in exactly {length} seconds.
         """
-        
+
         messages = self.create_messages(user_prompt)
-        response = self.chat_completion(messages, temperature=0.8, max_tokens=4000)
-        
-        # Parse the response to extract structured scene data
-        scenes = self._parse_scenes_from_script(response, 10, 12.0)
+        response = self.chat_completion(messages, temperature=0.7, max_tokens=4000)
+
+        # Parse JSON response with error handling
+        try:
+            script_data = json.loads(response.strip())
+
+            # Validate and enhance scene data
+            if "scenes" in script_data:
+                for i, scene in enumerate(script_data["scenes"]):
+                    scene["scene_number"] = i + 1
+                    scene["start_time"] = i * actual_scene_duration
+                    scene["end_time"] = (i + 1) * actual_scene_duration
+
+                    # Ensure required fields exist
+                    if "video_prompt" not in scene:
+                        scene["video_prompt"] = scene.get("visual_description", "")
+                    if "key_visual_elements" not in scene:
+                        scene["key_visual_elements"] = []
+
+            parsing_success = True
+
+        except json.JSONDecodeError as e:
+            # Fallback parsing if JSON fails
+            script_data = {
+                "title": f"{concept} - {genre} Video",
+                "summary": concept,
+                "total_duration": length,
+                "scene_count": scene_count,
+                "scenes": self._create_fallback_scenes(concept, genre, scene_count, actual_scene_duration),
+                "raw_response": response,
+                "parsing_error": str(e)
+            }
+            parsing_success = False
 
         return {
-            "script": response,
-            "scenes": scenes,
+            "script_data": script_data,
             "concept": concept,
             "genre": genre,
             "length": length,
             "target_audience": target_audience,
+            "platform": platform,
+            "scene_count": scene_count,
+            "scene_duration": actual_scene_duration,
             "agent_type": self.agent_type,
-            "ready_for_video_generation": True
+            "ready_for_video_generation": parsing_success,
+            "parsing_success": parsing_success
         }
 
-    def _parse_scenes_from_script(self, script: str, scene_count: int, scene_duration: float) -> List[Dict[str, Any]]:
-        """Parse the script response to extract structured scene data"""
+    def _create_fallback_scenes(self, concept: str, genre: str, scene_count: int, scene_duration: float) -> List[Dict[str, Any]]:
+        """Create fallback scene structure when JSON parsing fails"""
         scenes = []
-        lines = script.split('\n')
-        current_scene = None
 
-        for line in lines:
-            line = line.strip()
-            if line.startswith('**SCENE ') and line.endswith('**'):
-                # Save previous scene
-                if current_scene:
-                    scenes.append(current_scene)
+        # Basic scene templates based on genre
+        scene_templates = {
+            "action": [
+                "Dynamic action sequence with fast movement",
+                "Close-up of protagonist with determined expression",
+                "Wide shot of dramatic environment",
+                "Intense confrontation scene",
+                "Climactic action moment",
+                "Resolution with calm aftermath"
+            ],
+            "drama": [
+                "Emotional character introduction",
+                "Conflict setup with tension building",
+                "Character reaction and internal struggle",
+                "Pivotal dramatic moment",
+                "Emotional climax",
+                "Thoughtful resolution"
+            ],
+            "comedy": [
+                "Humorous setup with character introduction",
+                "Comedic situation development",
+                "Funny misunderstanding or mishap",
+                "Escalating comedic chaos",
+                "Peak comedy moment",
+                "Satisfying comedic resolution"
+            ]
+        }
 
-                # Start new scene
-                scene_num = len(scenes) + 1
-                current_scene = {
-                    "scene_number": scene_num,
-                    "duration": scene_duration,
-                    "start_time": (scene_num - 1) * scene_duration,
-                    "end_time": scene_num * scene_duration,
-                    "visual": "",
-                    "audio": "",
-                    "mood": "",
-                    "transition": ""
-                }
-            elif current_scene and line.startswith('- VISUAL:'):
-                current_scene["visual"] = line.replace('- VISUAL:', '').strip()
-            elif current_scene and line.startswith('- AUDIO/VOICEOVER:'):
-                current_scene["audio"] = line.replace('- AUDIO/VOICEOVER:', '').strip()
-            elif current_scene and line.startswith('- MOOD:'):
-                current_scene["mood"] = line.replace('- MOOD:', '').strip()
-            elif current_scene and line.startswith('- TRANSITION:'):
-                current_scene["transition"] = line.replace('- TRANSITION:', '').strip()
+        templates = scene_templates.get(genre.lower(), scene_templates["drama"])
 
-        # Add the last scene
-        if current_scene:
-            scenes.append(current_scene)
-
-        # Ensure we have the expected number of scenes
-        while len(scenes) < scene_count:
-            scenes.append({
-                "scene_number": len(scenes) + 1,
+        for i in range(scene_count):
+            template_index = i % len(templates)
+            scene = {
+                "scene_number": i + 1,
                 "duration": scene_duration,
-                "start_time": len(scenes) * scene_duration,
-                "end_time": (len(scenes) + 1) * scene_duration,
-                "visual": f"Scene {len(scenes) + 1} placeholder",
-                "audio": f"Scene {len(scenes) + 1} audio",
-                "mood": "neutral",
-                "transition": "fade"
-            })
+                "start_time": i * scene_duration,
+                "end_time": (i + 1) * scene_duration,
+                "visual_description": f"{templates[template_index]} related to {concept}",
+                "voiceover_text": f"Scene {i + 1} narration about {concept}",
+                "mood": "engaging",
+                "camera_style": "dynamic",
+                "transition_to_next": "smooth fade" if i < scene_count - 1 else "end",
+                "key_visual_elements": [concept, genre, "engaging visuals"],
+                "video_prompt": f"{templates[template_index]} related to {concept}, {genre} style, high quality"
+            }
+            scenes.append(scene)
 
-        return scenes[:scene_count]
+        return scenes
 
 class VideoEditorAgent(BaseAgent):
     """AI agent for automated multi-scene video generation, assembly, and stitching"""
@@ -140,119 +233,139 @@ You take structured scene data from screenwriters and transform it into complete
 
 This is revolutionary - you create full-length videos (1-2 minutes) from multiple AI-generated scenes, something no other platform can do."""
 
-    def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Generate complete multi-scene video from structured scene data"""
-        self.validate_input(input_data, ["scenes"])
+    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate complete multi-scene video from structured scene data - REVOLUTIONARY CAPABILITY"""
+        # Accept either script_data from ScreenwriterAgent or direct scenes
+        if "script_data" in input_data:
+            script_data = input_data["script_data"]
+            scenes = script_data.get("scenes", [])
+            title = script_data.get("title", "Generated Video")
+        elif "scenes" in input_data:
+            scenes = input_data["scenes"]
+            script_data = {"title": "Generated Video", "scenes": scenes}
+            title = "Generated Video"
+        else:
+            raise ValueError("Either 'script_data' or 'scenes' must be provided")
 
-        scenes = input_data["scenes"]
+        if not scenes:
+            raise ValueError("No scenes provided for video generation")
+
         platform = input_data.get("platform", "youtube")
         style = input_data.get("style", "cinematic")
         video_provider = input_data.get("video_provider", "runway")
-        voice_id = input_data.get("voice_id", "21m00Tcm4TlvDq8ikWAM")  # Default ElevenLabs voice
+        voice_id = input_data.get("voice_id", "21m00Tcm4TlvDq8ikWAM")
 
-        # Validate scenes structure
-        if not isinstance(scenes, list) or len(scenes) == 0:
-            raise ValueError("Scenes must be a non-empty list")
+        total_duration = sum(scene.get("duration", 10) for scene in scenes)
+        scene_count = len(scenes)
 
-        # Create video generation plan
-        video_plan = self._create_video_generation_plan(scenes, platform, style, video_provider)
-
-        # Generate execution instructions for the worker
-        execution_plan = {
-            "operation": "multi_scene_video_generation",
-            "scenes": scenes,
-            "video_plan": video_plan,
+        # Create comprehensive video generation and stitching plan
+        video_production_plan = {
+            "title": title,
+            "total_duration": total_duration,
+            "scene_count": scene_count,
             "platform": platform,
-            "style": style,
             "video_provider": video_provider,
-            "voice_id": voice_id,
-            "total_duration": sum(scene.get("duration", 10) for scene in scenes),
-            "scene_count": len(scenes),
-            "workflow_steps": [
-                "generate_individual_scene_videos",
-                "generate_scene_audio",
-                "create_transitions",
-                "stitch_videos_with_audio",
-                "apply_platform_optimization",
-                "generate_final_output"
-            ]
-        }
 
-        return {
-            "execution_plan": execution_plan,
-            "video_plan": video_plan,
-            "scenes": scenes,
-            "platform": platform,
-            "style": style,
-            "video_provider": video_provider,
-            "voice_id": voice_id,
-            "agent_type": self.agent_type,
-            "ready_for_production": True,
-            "estimated_processing_time": len(scenes) * 30,  # 30 seconds per scene
-            "revolutionary_feature": "Multi-scene AI video generation and stitching"
-        }
+            # Step 1: Individual Scene Generation
+            "scene_generation": {
+                "provider": video_provider,
+                "quality": "high",
+                "style": style,
+                "scenes_to_generate": [
+                    {
+                        "scene_number": scene.get("scene_number", i + 1),
+                        "duration": scene.get("duration", 10),
+                        "video_prompt": scene.get("video_prompt", scene.get("visual_description", "")),
+                        "voiceover_text": scene.get("voiceover_text", ""),
+                        "mood": scene.get("mood", "neutral"),
+                        "camera_style": scene.get("camera_style", "cinematic"),
+                        "key_elements": scene.get("key_visual_elements", [])
+                    }
+                    for i, scene in enumerate(scenes)
+                ]
+            },
 
-    def _create_video_generation_plan(self, scenes: List[Dict[str, Any]], platform: str, style: str, provider: str) -> Dict[str, Any]:
-        """Create detailed plan for video generation and stitching"""
+            # Step 2: Audio Generation
+            "audio_generation": {
+                "voice_id": voice_id,
+                "audio_segments": [
+                    {
+                        "scene_number": scene.get("scene_number", i + 1),
+                        "text": scene.get("voiceover_text", ""),
+                        "duration": scene.get("duration", 10),
+                        "start_time": sum(s.get("duration", 10) for s in scenes[:i]),
+                        "mood": scene.get("mood", "neutral")
+                    }
+                    for i, scene in enumerate(scenes)
+                ]
+            },
 
-        # Platform-specific settings
-        platform_settings = {
-            "youtube": {"aspect_ratio": "16:9", "resolution": "1920x1080", "max_duration": 300},
-            "tiktok": {"aspect_ratio": "9:16", "resolution": "1080x1920", "max_duration": 180},
-            "instagram": {"aspect_ratio": "1:1", "resolution": "1080x1080", "max_duration": 90},
-            "twitter": {"aspect_ratio": "16:9", "resolution": "1280x720", "max_duration": 140}
-        }
-
-        settings = platform_settings.get(platform, platform_settings["youtube"])
-
-        # Create individual scene generation plans
-        scene_plans = []
-        for i, scene in enumerate(scenes):
-            scene_plan = {
-                "scene_number": i + 1,
-                "visual_prompt": self._enhance_visual_prompt(scene.get("visual", ""), style, settings),
-                "audio_text": scene.get("audio", ""),
-                "duration": scene.get("duration", 10),
-                "mood": scene.get("mood", "neutral"),
-                "transition_in": self._get_transition_type(scene.get("transition", "fade"), "in"),
-                "transition_out": self._get_transition_type(scene.get("transition", "fade"), "out"),
-                "video_provider": provider,
-                "provider_settings": {
-                    "resolution": settings["resolution"],
-                    "aspect_ratio": settings["aspect_ratio"],
-                    "duration": scene.get("duration", 10),
-                    "style": style,
-                    "guidance_scale": 12 if provider == "pika" else 7.5,
-                    "motion_strength": 5 if provider == "runway" else None
+            # Step 3: Transition Generation
+            "transitions": [
+                {
+                    "from_scene": i + 1,
+                    "to_scene": i + 2,
+                    "transition_type": scenes[i].get("transition_to_next", "fade"),
+                    "duration": 0.5
                 }
-            }
-            scene_plans.append(scene_plan)
+                for i in range(len(scenes) - 1)
+            ],
 
-        return {
-            "platform_settings": settings,
-            "scene_plans": scene_plans,
-            "total_scenes": len(scenes),
-            "stitching_plan": {
-                "method": "ffmpeg_concat",
-                "transition_duration": 0.5,
-                "audio_sync": True,
-                "color_correction": True,
-                "stabilization": True
-            },
-            "audio_plan": {
-                "voice_generation": True,
-                "background_music": False,  # Can be enhanced later
-                "audio_normalization": True,
-                "sync_tolerance": 0.1
-            },
-            "optimization_plan": {
-                "platform": platform,
-                "compression": "h264",
-                "bitrate": "high",
-                "captions": True,
-                "thumbnail_generation": True
+            # Step 4: Final Assembly
+            "assembly": {
+                "platform_optimization": self._get_platform_settings(platform),
+                "final_effects": ["color_grading", "audio_mixing", "stabilization"],
+                "output_format": "mp4",
+                "quality": "1080p"
             }
         }
+
+        return {
+            "video_production_plan": video_production_plan,
+            "execution_ready": True,
+            "revolutionary_achievement": f"UNPRECEDENTED: Generating {total_duration}s video from {scene_count} AI-generated scenes!",
+            "scenes": scenes,
+            "platform": platform,
+            "video_provider": video_provider,
+            "agent_type": self.agent_type,
+            "estimated_processing_time": scene_count * 45,  # 45 seconds per scene including stitching
+            "workflow_status": "ready_for_worker_execution"
+        }
+
+    def _get_platform_settings(self, platform: str) -> Dict[str, Any]:
+        """Get platform-specific video settings"""
+        platform_settings = {
+            "youtube": {
+                "aspect_ratio": "16:9",
+                "resolution": "1920x1080",
+                "max_duration": 300,
+                "bitrate": "8000k",
+                "fps": 30
+            },
+            "tiktok": {
+                "aspect_ratio": "9:16",
+                "resolution": "1080x1920",
+                "max_duration": 180,
+                "bitrate": "6000k",
+                "fps": 30
+            },
+            "instagram": {
+                "aspect_ratio": "1:1",
+                "resolution": "1080x1080",
+                "max_duration": 90,
+                "bitrate": "5000k",
+                "fps": 30
+            },
+            "twitter": {
+                "aspect_ratio": "16:9",
+                "resolution": "1280x720",
+                "max_duration": 140,
+                "bitrate": "4000k",
+                "fps": 30
+            }
+        }
+
+        return platform_settings.get(platform, platform_settings["youtube"])
 
     def _enhance_visual_prompt(self, base_prompt: str, style: str, settings: Dict[str, Any]) -> str:
         """Enhance visual prompt with style and technical specifications"""

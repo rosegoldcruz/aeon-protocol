@@ -11,21 +11,34 @@ export async function GET(request: Request) {
     if (!token) return NextResponse.json({ error: "REPLICATE_API_TOKEN not configured" }, { status: 500 })
 
     const resp = await fetch(`https://api.replicate.com/v1/predictions/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Token ${token}` }, // CRITICAL: Token, not Bearer
       cache: "no-store",
     })
     const data = await resp.json()
     if (!resp.ok) {
-      return NextResponse.json({ error: data?.error || "Replicate error" }, { status: resp.status })
+      return NextResponse.json({ error: data?.detail || "Replicate status failed" }, {
+        status: 502,
+      })
     }
 
-    // On success, Replicate may require authenticated file fetch. Pass-through URL as-is.
+    // Normalize output handling for different response formats
+    let outputUrl: string | null = null;
+    if (typeof data.output === "string") outputUrl = data.output;
+    else if (Array.isArray(data.output)) {
+      outputUrl =
+        data.output.find((u: any) => typeof u === "string" && u.endsWith(".mp4")) ??
+        data.output.find((u: any) => typeof u === "string") ??
+        null;
+    } else if (data.output && typeof data.output === "object") {
+      outputUrl = (data.output.video || data.output.url || null) as string | null;
+    }
+
     return NextResponse.json({
       id: data.id,
       status: data.status,
-      output: data.output || null,
-      logs: data.logs || "",
-      error: data.error || null,
+      output: outputUrl,
+      logs: data.logs ?? null,
+      error: data.error ?? null,
     })
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || "Unknown error" }, { status: 500 })

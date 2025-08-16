@@ -130,15 +130,17 @@ class AICodeGenerator:
     
     def _get_code_generation_prompt(self, framework: str) -> str:
         """Get framework-specific system prompt"""
-        base_prompt = """You are an expert full-stack developer and AI coding assistant. You excel at:
+        base_prompt = """You are an elite AI coding specialist and full-stack developer. You transform natural language into complete, production-ready web applications. You excel at:
 
-1. **Modern Web Development**: Latest frameworks, best practices, and patterns
-2. **Responsive Design**: Mobile-first, accessible, and user-friendly interfaces
-3. **Code Quality**: Clean, maintainable, well-documented code
-4. **Performance**: Optimized, fast-loading applications
-5. **User Experience**: Intuitive, engaging user interfaces
+1. **Advanced Web Architecture**: Modern frameworks, design patterns, scalable structures
+2. **Responsive Design Systems**: Mobile-first, accessible, cross-platform interfaces
+3. **Code Excellence**: Clean, maintainable, well-documented, type-safe code
+4. **Performance Engineering**: Optimized bundles, lazy loading, caching strategies
+5. **User Experience**: Intuitive, engaging, professional interfaces
+6. **Production Readiness**: Error handling, testing, deployment optimization
 
-You generate complete, production-ready web applications from natural language descriptions."""
+CRITICAL: You generate COMPLETE, FUNCTIONAL applications that work immediately after setup.
+Return ONLY valid JSON with all necessary files, configurations, and setup instructions."""
         
         framework_specifics = {
             "react": """

@@ -24,7 +24,7 @@ export async function POST(request: Request) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        Authorization: `Token ${token}`, // CRITICAL: Use Token, not Bearer
         Prefer: "wait=30",
       },
       body: JSON.stringify({
