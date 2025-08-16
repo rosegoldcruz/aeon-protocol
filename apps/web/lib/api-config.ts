@@ -165,7 +165,7 @@ export const createApiClient = () => {
       const response = await fetch(`${baseURL}${endpoint}`, {
         method: 'POST',
         ...HTTP_CONFIG,
-        body: data ? JSON.stringify(data) : undefined,
+        body: data ? JSON.stringify(data) : null,
         ...options,
       });
       return response;
@@ -175,7 +175,7 @@ export const createApiClient = () => {
       const response = await fetch(`${baseURL}${endpoint}`, {
         method: 'PUT',
         ...HTTP_CONFIG,
-        body: data ? JSON.stringify(data) : undefined,
+        body: data ? JSON.stringify(data) : null,
         ...options,
       });
       return response;
