@@ -220,7 +220,7 @@ export const validateEnvironment = () => {
   console.log('✅ API Configuration loaded:', {
     baseUrl: API_CONFIG.BASE_URL,
     environment: process.env.NODE_ENV,
-    hasReplicateToken: !!process.env.REPLICATE_API_TOKEN,
+    hasReplicateToken: !!process.env['REPLICATE_API_TOKEN'],
   });
 };
 
