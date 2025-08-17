@@ -2,11 +2,19 @@ export const API_BASE =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/,'') ||
   "https://api.aeonprotocol.com";
 
+export const API_CONFIG = {
+  BASE_URL: API_BASE,
+  TIMEOUT: 30000,
+  RETRY_ATTEMPTS: 3,
+  RETRY_DELAY: 1000,
+} as const;
+
+
 // API Endpoints
 export const API_ENDPOINTS = {
   // Health Check
   HEALTH: '/health',
-  
+
   // Authentication
   AUTH: {
     LOGIN: '/auth/login',
@@ -22,13 +30,13 @@ export const API_ENDPOINTS = {
     VIDEO_EDITOR: '/agents/content/video-editor',
     CONTENT_OPTIMIZER: '/agents/content/content-optimizer',
     SEO_CONTENT: '/agents/content/seo-content',
-    
+
     // Business Automation Agents
     SALES: '/agents/business/sales',
     CUSTOMER_SERVICE: '/agents/business/customer-service',
     MARKETING: '/agents/business/marketing',
     ANALYTICS: '/agents/business/analytics',
-    
+
     // Revolutionary Workflows
     SCRIPT_TO_VIDEO: '/agents/revolutionary/script-to-video',
     MULTI_SCENE_VIDEO: '/agents/content/multi-scene-video',
@@ -40,12 +48,12 @@ export const API_ENDPOINTS = {
     VIDEO_GENERATE: '/media/videos/generate',
     VIDEO_STATUS: '/media/videos/status',
     IMAGE_TO_VIDEO: '/media/videos/image-to-video',
-    
+
     // Image Generation
     IMAGE_GENERATE: '/media/images/generate',
     IMAGE_UPSCALE: '/media/images/upscale',
     IMAGE_EDIT: '/media/images/edit',
-    
+
     // Audio Generation
     AUDIO_GENERATE: '/media/audio/generate',
     VOICE_CLONE: '/media/audio/voice-clone',
@@ -83,14 +91,14 @@ export const API_ENDPOINTS = {
 // Helper function to build full API URLs
 export const buildApiUrl = (endpoint: string, params?: Record<string, string | number>): string => {
   let url = `${API_CONFIG.BASE_URL}${endpoint}`;
-  
+
   // Replace path parameters
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
       url = url.replace(`:${key}`, String(value));
     });
   }
-  
+
   return url;
 };
 
@@ -121,7 +129,7 @@ export const isProduction = process.env.NODE_ENV === 'production';
 // API client factory
 export const createApiClient = () => {
   const baseURL = API_CONFIG.BASE_URL;
-  
+
   return {
     get: async (endpoint: string, options?: RequestInit) => {
       const response = await fetch(`${baseURL}${endpoint}`, {
@@ -131,7 +139,7 @@ export const createApiClient = () => {
       });
       return response;
     },
-    
+
     post: async (endpoint: string, data?: any, options?: RequestInit) => {
       const response = await fetch(`${baseURL}${endpoint}`, {
         method: 'POST',
@@ -141,7 +149,7 @@ export const createApiClient = () => {
       });
       return response;
     },
-    
+
     put: async (endpoint: string, data?: any, options?: RequestInit) => {
       const response = await fetch(`${baseURL}${endpoint}`, {
         method: 'PUT',
@@ -151,7 +159,7 @@ export const createApiClient = () => {
       });
       return response;
     },
-    
+
     delete: async (endpoint: string, options?: RequestInit) => {
       const response = await fetch(`${baseURL}${endpoint}`, {
         method: 'DELETE',
@@ -178,16 +186,16 @@ export const validateEnvironment = () => {
   const requiredEnvVars = [
     'REPLICATE_API_TOKEN',
   ];
-  
+
   const missing = requiredEnvVars.filter(envVar => !process.env[envVar]);
-  
+
   if (missing.length > 0) {
     console.warn('⚠️ Missing environment variables:', missing);
     if (isProduction) {
       throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
     }
   }
-  
+
   console.log('✅ API Configuration loaded:', {
     baseUrl: API_CONFIG.BASE_URL,
     environment: process.env.NODE_ENV,
