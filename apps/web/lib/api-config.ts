@@ -1,6 +1,6 @@
-export const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/,'') ||
-  "https://api.aeonprotocol.com";
+export const API_BASE = (process.env['NEXT_PUBLIC_API_URL']
+  ? process.env['NEXT_PUBLIC_API_URL'].replace(/\/+$/,'')
+  : "https://api.aeonprotocol.com");
 
 export const API_CONFIG = {
   BASE_URL: API_BASE,
