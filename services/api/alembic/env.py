@@ -10,7 +10,7 @@ import sys
 # Add the app directory to the path so we can import models
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-from app.models import Base
+from app.database.neon_db import Base
 from app.database import DATABASE_URL
 
 # this is the Alembic Config object, which provides

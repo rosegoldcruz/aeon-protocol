@@ -1,35 +1,6 @@
-/**
- * AEON Platform API Configuration
- * Centralized configuration for API endpoints and environment-specific settings
- */
-
-// Environment-based API URL configuration
-const getApiBaseUrl = (): string => {
-  // Check for explicit API URL override (highest priority)
-  if (process.env['NEXT_PUBLIC_API_URL']) {
-    return process.env['NEXT_PUBLIC_API_URL'];
-  }
-
-  // Environment-based defaults
-  switch (process.env.NODE_ENV) {
-    case 'production':
-      // Production: Use domain-based API endpoint
-      return 'https://api.aeonprotocol.com';
-    case 'development':
-      // Development: Use local backend
-      return 'http://localhost:8000/api';
-    default:
-      // Preview/staging: Use domain-based API endpoint
-      return 'https://api.aeonprotocol.com';
-  }
-};
-
-export const API_CONFIG = {
-  BASE_URL: getApiBaseUrl(),
-  TIMEOUT: 30000, // 30 seconds
-  RETRY_ATTEMPTS: 3,
-  RETRY_DELAY: 1000, // 1 second
-} as const;
+export const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/,'') ||
+  "https://api.aeonprotocol.com";
 
 // API Endpoints
 export const API_ENDPOINTS = {

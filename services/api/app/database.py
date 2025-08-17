@@ -5,10 +5,9 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 # Neon PostgreSQL Database configuration
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgres://neondb_owner:npg_uD6OmlzEb0Lh@ep-aged-snow-ad22bt8l-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require"
-)
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL is required")
 
 # Convert postgres:// to postgresql+asyncpg:// for SQLAlchemy async
 if DATABASE_URL.startswith("postgres://"):

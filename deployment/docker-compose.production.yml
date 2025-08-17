@@ -1,163 +1,51 @@
-version: '3.8'
-
 services:
-  # PostgreSQL Database
   postgres:
-    image: postgres:15
-    container_name: aeon-postgres
+    image: postgres:16
     environment:
-      POSTGRES_DB: aeon_production
-      POSTGRES_USER: aeon
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
-    ports:
-      - "5432:5432"
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U aeon -d aeon_production"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # Redis Cache & Queue
+      - pgdata:/var/lib/postgresql/data
   redis:
-    image: redis:7-alpine
-    container_name: aeon-redis
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
-    volumes:
-      - redis_data:/data
-    ports:
-      - "6379:6379"
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+    image: redis:7
 
-  # FastAPI Backend
   api:
     build:
-      context: ..
+      context: .
       dockerfile: deployment/Dockerfile.api
-    container_name: aeon-api
-    environment:
-      - DATABASE_URL=postgresql://aeon:${POSTGRES_PASSWORD}@postgres:5432/aeon_production
-      - REDIS_URL=redis://redis:6379/0
-      - ENVIRONMENT=production
-      - API_HOST=0.0.0.0
-      - API_PORT=8000
     env_file:
-      - .env.production
-    ports:
-      - "8000:8000"
+      - .env.api
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    restart: unless-stopped
-    volumes:
-      - ../services/api:/app/services/api
-      - ../services/worker:/app/services/worker
-      - app_logs:/app/logs
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      - postgres
+      - redis
 
-  # Celery Worker for AI Processing
   worker:
     build:
-      context: ..
+      context: .
       dockerfile: deployment/Dockerfile.worker
-    container_name: aeon-worker
-    environment:
-      - DATABASE_URL=postgresql://aeon:${POSTGRES_PASSWORD}@postgres:5432/aeon_production
-      - REDIS_URL=redis://redis:6379/0
-      - ENVIRONMENT=production
     env_file:
-      - .env.production
+      - .env.worker
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    restart: unless-stopped
-    volumes:
-      - ../services/worker:/app/services/worker
-      - ../services/api:/app/services/api
-      - worker_logs:/app/logs
-    deploy:
-      replicas: 2
+      - postgres
+      - redis
 
-  # Nginx Reverse Proxy
-  nginx:
-    image: nginx:alpine
-    container_name: aeon-nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./ssl:/etc/nginx/ssl:ro
-      - nginx_logs:/var/log/nginx
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    env_file:
+      - .env.web
     depends_on:
       - api
-    restart: unless-stopped
 
-  # Monitoring with Prometheus (optional)
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: aeon-prometheus
-    ports:
-      - "9090:9090"
+  nginx:
+    image: nginx:1.25-alpine
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=200h'
-      - '--web.enable-lifecycle'
-    restart: unless-stopped
-
-  # Grafana Dashboard (optional)
-  grafana:
-    image: grafana/grafana:latest
-    container_name: aeon-grafana
+      - ./deployment/nginx.conf:/etc/nginx/nginx.conf:ro
     ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
-    volumes:
-      - grafana_data:/var/lib/grafana
+      - "80:80"
     depends_on:
-      - prometheus
-    restart: unless-stopped
+      - web
+      - api
 
 volumes:
-  postgres_data:
-    driver: local
-  redis_data:
-    driver: local
-  app_logs:
-    driver: local
-  worker_logs:
-    driver: local
-  nginx_logs:
-    driver: local
-  prometheus_data:
-    driver: local
-  grafana_data:
-    driver: local
-
-networks:
-  default:
-    name: aeon-network
-    driver: bridge
+  pgdata:

@@ -29,7 +29,6 @@ services:
       - ../.env.local
     environment:
       - REDIS_URL=redis://redis:6379/0
-      - DATABASE_URL=postgres://neondb_owner:npg_uD6OmlzEb0Lh@ep-aged-snow-ad22bt8l-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require
       - S3_ENDPOINT=http://localstack:4566
       - AWS_ACCESS_KEY_ID=localstack
       - AWS_SECRET_ACCESS_KEY=localstack
