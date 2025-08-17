@@ -1,11 +1,6 @@
 from pydantic_settings import BaseSettings
-from pydantic import AnyUrl
-import os
 
 class Settings(BaseSettings):
-    ENV: str = os.getenv("ENV", "production")
-    API_PREFIX: str = "/v1"
-
     # Database
     DATABASE_URL: str
 
@@ -22,10 +17,11 @@ class Settings(BaseSettings):
     CLERK_JWKS_URL: str
     CLERK_ISSUER: str
     CLERK_AUDIENCE: str
+    CLERK_WEBHOOK_SECRET: str
 
-    # Observability
-    SENTRY_DSN: str | None = None
-    PROMETHEUS_ENABLED: bool = True
+    # Observability & CORS
+    PROMETHEUS_ENABLED: bool
+    CORS_ALLOW_ORIGINS: str
 
 settings = Settings()
 

@@ -4,16 +4,16 @@ from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
 from starlette.responses import Response
 import os
 from .config import settings
-from .routers import media  # keep others disabled until compile passes cleanly
+from .routers import media, webhooks
 
 app = FastAPI(title="AEON API")
 
 # CORS: set from env
-ALLOWED_ORIGINS = os.getenv("CORS_ALLOW_ORIGINS","https://aeonprotocol.com,https://app.aeonprotocol.com,https://api.aeonprotocol.com,http://localhost:3000").split(",")
+ALLOWED_ORIGINS = [o.strip() for o in settings.CORS_ALLOW_ORIGINS.split(",")]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in ALLOWED_ORIGINS],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -35,5 +35,7 @@ def metrics():
         return Response(status_code=404)
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
-app.include_router(media.router, prefix=settings.API_PREFIX)
+# Routers
+app.include_router(media.router, prefix="/v1/media")
+app.include_router(webhooks.router, prefix="/v1/webhooks")
 

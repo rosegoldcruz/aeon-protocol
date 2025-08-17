@@ -1,8 +1,6 @@
 from fastapi import Depends, HTTPException, status, Request
 from jose import jwt
-from jose.utils import base64url_decode
 import requests, time
-from functools import lru_cache
 from .config import settings
 
 class JWKSCache:
@@ -31,18 +29,18 @@ def verify_bearer(request: Request):
     try:
         unverified = jwt.get_unverified_header(token)
         jwks = _jwks.get()
-        key = next((k for k in jwks["keys"] if k["kid"] == unverified["kid"]), None)
+        key = next((k for k in jwks.get("keys", []) if k.get("kid") == unverified.get("kid")), None)
         if not key:
             raise HTTPException(status_code=401, detail="Invalid token kid")
 
         claims = jwt.decode(
             token,
             key,
-            algorithms=[unverified["alg"]],
+            algorithms=[unverified.get("alg")],
             audience=settings.CLERK_AUDIENCE,
             issuer=settings.CLERK_ISSUER,
             options={"verify_at_hash": False}
         )
         return claims
-    except Exception as e:
+    except Exception:
         raise HTTPException(status_code=401, detail="Invalid token")
