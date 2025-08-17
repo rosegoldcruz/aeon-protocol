@@ -5,7 +5,8 @@ export async function backendFetch(path: string, init?: RequestInit) {
   const headers = new Headers(init?.headers || {});
   headers.set("Authorization", `Bearer ${token}`);
   headers.set("Content-Type", headers.get("Content-Type") || "application/json");
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "https://api.aeonprotocol.com"}${path}`, {
+  const base = process.env['NEXT_PUBLIC_API_URL'] || "https://api.aeonprotocol.com";
+  const res = await fetch(`${base}${path}`, {
     ...init,
     headers,
     cache: "no-store",
